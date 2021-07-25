@@ -15,12 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
-          output_dir="./output", save_data=True, save_scatter=True):
+          output_dir="./output", save_data=True, save_scatter=True, use_features=False):
     os.makedirs(output_dir, exist_ok=True)
-    df, image_shape = load_data(paths)
-    # load_features(paths)  # TODO load features and use it to calculate tsne
-    images = get_image_data(df, image_shape)
-    tsne_results = apply_tsne(df, images, perplexity, n_iter, pca_components=pca_components)
+    df, image_shape, tsne_input = load_data(paths, use_features)
+    tsne_results = apply_tsne(df, tsne_input, perplexity, n_iter, pca_components=pca_components)
     logger.info("tsne finished: %s", tsne_results.shape)
     df['tsne_x_raw'], df['tsne_y_raw'] = tsne_results[:, 0], tsne_results[:, 1]
     norm = StandardScaler().fit_transform(df[["tsne_x_raw", "tsne_y_raw"]])
@@ -32,7 +30,7 @@ def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca
         logger.info("saving data.csv")
         df.to_csv(os.path.join(output_dir, "data.csv"), index=False)
     logger.info("finished")
-    return df
+    return df, image_shape
 
 
 def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=None):
@@ -83,21 +81,41 @@ def apply_tsne(df, data, perplexity, n_iter, learning_rate=200, pca_components=N
     return tsne.fit_transform(data)
 
 
-def load_data(paths):
+def load_features(image_path, extensions=("npz", "npy")):
+    base_path = os.path.splitext(image_path)[0]
+    for ext in extensions:
+        f = f"{base_path}.{ext}"
+        if os.path.exists(f):
+            data = np.load(f)
+            if ext == "npz":
+                data = data["arr_0"]
+            return data
+    return None
+
+
+def load_data(paths, use_features):
     df = pd.DataFrame()
     image_shape = None
+    all_features = []
     for path in paths:
         logger.info("loading images from %s", path)
         name = os.path.basename(path)
         for f in glob(os.path.join(path, "*.png")):
+            if use_features:
+                features = load_features(f)
+                if features is None:
+                    logger.warning("features not found for %s", f)
+                    continue
+                all_features.append(features)
             image = np.array(Image.open(f))/255
             image_shape = image.shape
             df_new = pd.DataFrame(image.reshape((-1, np.prod(image_shape))))
             df_new["name"] = name
-            df_new["file"] = os.path.basename(f)
+            df_new["file"] = f
             df = df.append(df_new)
     logger.info("loaded %d images with shape %s", len(df), image_shape)
-    return df.reset_index(), image_shape
+    tsne_input = np.array(all_features) if use_features else get_image_data(df, image_shape)
+    return df.reset_index(), image_shape, tsne_input
 
 
 def generate_scatter(df, output_dir):
