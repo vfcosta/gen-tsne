@@ -21,9 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
-          output_dir="./output", save_data=True, save_scatter=True, use_features=False, images_pattern="*.png"):
+          output_dir="./output", save_data=True, save_scatter=True, use_features=False, images_pattern="*.png",
+          resize=None):
     os.makedirs(output_dir, exist_ok=True)
-    df, image_shape, tsne_input = load_data(paths, use_features, images_pattern)
+    df, image_shape, tsne_input = load_data(paths, use_features, images_pattern, resize)
     tsne_results = apply_tsne(df, tsne_input, perplexity, n_iter, pca_components=pca_components)
     logger.info("tsne finished: %s", tsne_results.shape)
     df['tsne_x_raw'], df['tsne_y_raw'] = tsne_results[:, 0], tsne_results[:, 1]
@@ -99,7 +100,7 @@ def load_features(image_path, extensions=("npz", "npy")):
     return None
 
 
-def load_data(paths, use_features, images_pattern):
+def load_data(paths, use_features, images_pattern, resize=None):
     df = pd.DataFrame()
     image_shape = None
     all_features = []
@@ -113,9 +114,12 @@ def load_data(paths, use_features, images_pattern):
                     logger.warning("features not found for %s", f)
                     continue
                 all_features.append(features)
-            image = np.array(Image.open(f))/255
-            image_shape = image.shape
-            df_new = pd.DataFrame(image.reshape((-1, np.prod(image_shape))))
+            image = Image.open(f)
+            if resize:
+                image = image.resize(resize)
+            image_array = np.array(image)/255
+            image_shape = image_array.shape
+            df_new = pd.DataFrame(image_array.reshape((-1, np.prod(image_shape))))
             df_new["name"] = name
             df_new["file"] = f
             df = df.append(df_new)
