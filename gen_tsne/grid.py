@@ -6,10 +6,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from MulticoreTSNE import MulticoreTSNE as TSNE
 from PIL import Image
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+
+USE_MULTICORE_TSNE = False
+
+if USE_MULTICORE_TSNE:
+    from MulticoreTSNE import MulticoreTSNE as TSNE
+else:
+    from sklearn.manifold import TSNE
 
 logger = logging.getLogger(__name__)
 
