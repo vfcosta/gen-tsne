@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
-          output_dir="./output", save_data=True, save_scatter=True, use_features=False):
+          output_dir="./output", save_data=True, save_scatter=True, use_features=False, images_pattern="*.png"):
     os.makedirs(output_dir, exist_ok=True)
-    df, image_shape, tsne_input = load_data(paths, use_features)
+    df, image_shape, tsne_input = load_data(paths, use_features, images_pattern)
     tsne_results = apply_tsne(df, tsne_input, perplexity, n_iter, pca_components=pca_components)
     logger.info("tsne finished: %s", tsne_results.shape)
     df['tsne_x_raw'], df['tsne_y_raw'] = tsne_results[:, 0], tsne_results[:, 1]
@@ -99,14 +99,14 @@ def load_features(image_path, extensions=("npz", "npy")):
     return None
 
 
-def load_data(paths, use_features):
+def load_data(paths, use_features, images_pattern):
     df = pd.DataFrame()
     image_shape = None
     all_features = []
     for path in paths:
         logger.info("loading images from %s", path)
         name = os.path.basename(path)
-        for f in glob(os.path.join(path, "*.png")):
+        for f in glob(os.path.join(path, images_pattern)):
             if use_features:
                 features = load_features(f)
                 if features is None:

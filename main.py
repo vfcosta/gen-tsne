@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', "--iter", type=int, help='iterations', default=1000)
     parser.add_argument('-f', "--use-features", default=False, action='store_true',
                         help='Use features to build the grid (<IMAGE_NAME>.npy or <IMAGE_NAME>.npz)')
+    parser.add_argument('-i', '--images-pattern', help='Images pattern', default="*.png")
     args = parser.parse_args()
     calculate([args.baseline] + args.paths, args.output, frow=args.rows, fcol=args.cols, perplexity=args.perplexity,
-              n_iter=args.iter, use_features=args.use_features)
+              n_iter=args.iter, use_features=args.use_features, images_pattern=args.images_pattern)
