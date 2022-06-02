@@ -1,5 +1,5 @@
 scikit_learn==0.23.2
-numpy==1.19.4
+numpy==1.22.4
 pandas==1.1.4
 pillow-simd==7.0.0.post3
 matplotlib==3.5.2
@@ -10,3 +10,4 @@ torchvision==0.12.0
 tqdm==4.64.0
 piq==0.7.0
 git+https://github.com/openai/CLIP.git
+umap-learn[parametric_umap]==0.5.3

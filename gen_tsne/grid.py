@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import umap
 from PIL import Image
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -22,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
           output_dir="./output", save_data=True, save_scatter=True, use_features=False, images_pattern=("*.png",),
-          resize=None):
+          resize=None, dim_reduction="tsne"):
     os.makedirs(output_dir, exist_ok=True)
     df, image_shape, tsne_input = load_data(paths, use_features, images_pattern, resize)
-    tsne_results = apply_tsne(df, tsne_input, perplexity, n_iter, pca_components=pca_components)
+    tsne_results = apply_dimensionality_reduction(df, tsne_input, perplexity, n_iter, pca_components=pca_components,
+                                                  dim_reduction=dim_reduction)
     logger.info("tsne finished: %s", tsne_results.shape)
     df['tsne_x_raw'], df['tsne_y_raw'] = tsne_results[:, 0], tsne_results[:, 1]
     norm = StandardScaler().fit_transform(df[["tsne_x_raw", "tsne_y_raw"]])
@@ -75,7 +77,8 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
     return df
 
 
-def apply_tsne(df, data, perplexity, n_iter, learning_rate=200, pca_components=None, tsne_jobs=4):
+def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=None, tsne_jobs=4,
+                                   dim_reduction="tsne"):
     if pca_components:
         logger.info("shape before pca: %s", data.shape)
         pca = PCA(n_components=pca_components, svd_solver='randomized')
@@ -83,9 +86,12 @@ def apply_tsne(df, data, perplexity, n_iter, learning_rate=200, pca_components=N
         pca_cols = [f"pca_{c}" for c in range(pca.n_components)]
         df[pca_cols] = pd.DataFrame(data, index=df.index)
         logger.info("shape after pca: %s", data.shape)
-    tsne = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=n_iter, learning_rate=learning_rate,
-                n_jobs=tsne_jobs)
-    return tsne.fit_transform(data)
+
+    if dim_reduction == "umap":
+        model = umap.UMAP(n_components=2)
+    else:
+        model = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=n_iter, n_jobs=tsne_jobs)
+    return model.fit_transform(data)
 
 
 def load_features(image_path, extensions=("npz", "npy")):
