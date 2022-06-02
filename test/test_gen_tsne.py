@@ -24,5 +24,5 @@ class TestGenTsne(unittest.TestCase):
         paths = [os.path.join(ASSETS_DIR, "dataset"), os.path.join(ASSETS_DIR, "model_a"),
                  os.path.join(ASSETS_DIR, "model_b")]
         stats_df = calculate(paths, os.path.join(ASSETS_DIR, "output"), pca_components=None, frow=10, fcol=10,
-                             dim_reduction="umap")
+                             dim_reduction="umap", use_features=True)
         self.assertIn("jaccard_index", stats_df.columns)

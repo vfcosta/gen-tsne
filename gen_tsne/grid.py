@@ -89,6 +89,7 @@ def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=
     else:
         model = TSNE(n_components=2, verbose=True, perplexity=perplexity, n_iter=n_iter, n_jobs=tsne_jobs)
         transformed = model.fit(data)
+        model = transformed
     with open(DIM_REDUCTION_PATH, "wb") as f:
         pickle.dump(model, f)
     return transformed
