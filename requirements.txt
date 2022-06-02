@@ -4,10 +4,10 @@ pandas==1.1.4
 pillow-simd==7.0.0.post3
 matplotlib==3.5.2
 seaborn==0.11.0
-MulticoreTSNE==0.1
 torch==1.11.0
 torchvision==0.12.0
 tqdm==4.64.0
 piq==0.7.0
 git+https://github.com/openai/CLIP.git
 umap-learn[parametric_umap]==0.5.3
+opentsne==0.6.2

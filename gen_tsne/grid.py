@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -8,17 +9,12 @@ import pandas as pd
 import seaborn as sns
 import umap
 from PIL import Image
+from openTSNE import TSNE
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-USE_MULTICORE_TSNE = False
-
-if USE_MULTICORE_TSNE:
-    from MulticoreTSNE import MulticoreTSNE as TSNE
-else:
-    from sklearn.manifold import TSNE
-
 logger = logging.getLogger(__name__)
+DIM_REDUCTION_PATH = "dim_reduction.pkl"
 
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
@@ -89,9 +85,13 @@ def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=
 
     if dim_reduction == "umap":
         model = umap.UMAP(n_components=2)
+        transformed = model.fit_transform(data)
     else:
-        model = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=n_iter, n_jobs=tsne_jobs)
-    return model.fit_transform(data)
+        model = TSNE(n_components=2, verbose=True, perplexity=perplexity, n_iter=n_iter, n_jobs=tsne_jobs)
+        transformed = model.fit(data)
+    with open(DIM_REDUCTION_PATH, "wb") as f:
+        pickle.dump(model, f)
+    return transformed
 
 
 def load_features(image_path, extensions=("npz", "npy")):
