@@ -85,7 +85,7 @@ def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=
         logger.info("shape after pca: %s", data.shape)
 
     if dim_reduction == "umap":
-        model = umap.UMAP(n_components=2)
+        model = umap.UMAP(n_components=2, n_neighbors=10, min_dist=0.001)
         transformed = model.fit_transform(data)
         with open(DIM_REDUCTION_PATH, "wb") as f:
             pickle.dump(model, f)
