@@ -4,6 +4,7 @@ import pickle
 
 import numpy as np
 from PIL import Image
+from umap.parametric_umap import load_ParametricUMAP
 
 from gen_tsne.grid import load_features
 
@@ -12,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 def transform(paths, model_file):
     logger.info("loading model")
-    with open(model_file, "rb") as f:
-        model = pickle.load(f)
+    if model_file.endswith("umap"):
+        model = load_ParametricUMAP(model_file)
+    else:
+        with open(model_file, "rb") as f:
+            model = pickle.load(f)
     points = {}
     for f in paths:
         if f.endswith(".npz"):

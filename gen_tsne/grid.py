@@ -1,3 +1,4 @@
+from umap.parametric_umap import ParametricUMAP
 import logging
 import os
 import pickle
@@ -86,12 +87,17 @@ def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=
     if dim_reduction == "umap":
         model = umap.UMAP(n_components=2)
         transformed = model.fit_transform(data)
+        with open(DIM_REDUCTION_PATH, "wb") as f:
+            pickle.dump(model, f)
+    elif dim_reduction == "parametric_umap":
+        model = ParametricUMAP()
+        transformed = model.fit_transform(data)
+        model.save("model_parametric_umap")
     else:
         model = TSNE(n_components=2, verbose=True, perplexity=perplexity, n_iter=n_iter, n_jobs=tsne_jobs)
         transformed = model.fit(data)
-        model = transformed
-    with open(DIM_REDUCTION_PATH, "wb") as f:
-        pickle.dump(model, f)
+        with open(DIM_REDUCTION_PATH, "wb") as f:
+            pickle.dump(transformed, f)
     return transformed
 
 
