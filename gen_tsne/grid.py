@@ -19,10 +19,10 @@ DIM_REDUCTION_PATH = "dim_reduction.pkl"
 
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
-          output_dir="./output", save_data=True, save_scatter=True, use_features=False, images_pattern=("*.png",),
-          resize=None, dim_reduction="tsne", model_file=None):
+          output_dir="./output", save_data=True, save_scatter=True, use_features=False, resize=None,
+          dim_reduction="tsne", model_file=None):
     os.makedirs(output_dir, exist_ok=True)
-    df, image_shape, tsne_input = load_data(paths, use_features, images_pattern, resize)
+    df, image_shape, tsne_input = load_data(paths, use_features, resize)
     tsne_results = apply_dimensionality_reduction(df, tsne_input, perplexity, n_iter, pca_components=pca_components,
                                                   dim_reduction=dim_reduction, model_file=model_file)
     logger.info("tsne finished: %s", tsne_results.shape)
@@ -122,15 +122,17 @@ def load_features(image_path, extensions=("npz", "npy")):
     return None
 
 
-def load_data(paths, use_features, images_pattern, resize=None):
+def load_data(paths, use_features, resize=None):
     df = pd.DataFrame()
     image_shape = None
     all_features = []
     for i, path in enumerate(paths):
-        name = os.path.basename(path)
-        pattern = images_pattern[i] if i < len(images_pattern) else images_pattern[0]
-        logger.info("loading images from %s using pattern %s", path, pattern)
-        for f in glob(os.path.join(path, pattern)):
+        if not path.endswith(".png"):
+            path = os.path.join(path, "*.png")
+        files = glob(path)
+        name = os.path.basename(os.path.commonpath(files))
+        logger.info("loading images from %s for model %s", path, name)
+        for f in files:
             if use_features:
                 features = load_features(f)
                 if features is None:
@@ -146,6 +148,7 @@ def load_data(paths, use_features, images_pattern, resize=None):
             df_new["name"] = name
             df_new["file"] = f
             df = df.append(df_new)
+        logger.info("loaded %d images for path %s", len(df), path)
     logger.info("loaded %d images with shape %s", len(df), image_shape)
     tsne_input = np.array(all_features) if use_features else get_image_data(df, image_shape)
     return df.reset_index(), image_shape, tsne_input

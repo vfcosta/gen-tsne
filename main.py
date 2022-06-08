@@ -13,12 +13,11 @@ if __name__ == "__main__":
     parser.add_argument('-n', "--iter", type=int, help='iterations', default=1000)
     parser.add_argument('-f', "--use-features", default=False, action='store_true',
                         help='Use features to build the grid (<IMAGE_NAME>.npy or <IMAGE_NAME>.npz)')
-    parser.add_argument('-i', '--images-pattern', help='Images pattern', default="*.png", nargs='+')
     parser.add_argument('-s', '--size', nargs='+', type=int, help='Resize image', default=None)
     parser.add_argument('-d', '--dim-reduction', default="tsne",
                         help='Algorithm for dimensionality reduction (tsne|umap|parametric_umap)')
     parser.add_argument('-m', '--model-file', help='Trained model file')
     args = parser.parse_args()
     calculate([args.baseline] + args.paths, args.output, frow=args.rows, fcol=args.cols, perplexity=args.perplexity,
-              n_iter=args.iter, use_features=args.use_features, images_pattern=args.images_pattern, resize=args.size,
-              dim_reduction=args.dim_reduction, model_file=args.model_file)
+              n_iter=args.iter, use_features=args.use_features, resize=args.size, dim_reduction=args.dim_reduction,
+              model_file=args.model_file)
