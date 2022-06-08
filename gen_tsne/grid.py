@@ -1,4 +1,4 @@
-from umap.parametric_umap import ParametricUMAP
+from umap.parametric_umap import ParametricUMAP, load_ParametricUMAP
 import logging
 import os
 import pickle
@@ -20,11 +20,11 @@ DIM_REDUCTION_PATH = "dim_reduction.pkl"
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
           output_dir="./output", save_data=True, save_scatter=True, use_features=False, images_pattern=("*.png",),
-          resize=None, dim_reduction="tsne"):
+          resize=None, dim_reduction="tsne", model_file=None):
     os.makedirs(output_dir, exist_ok=True)
     df, image_shape, tsne_input = load_data(paths, use_features, images_pattern, resize)
     tsne_results = apply_dimensionality_reduction(df, tsne_input, perplexity, n_iter, pca_components=pca_components,
-                                                  dim_reduction=dim_reduction)
+                                                  dim_reduction=dim_reduction, model_file=model_file)
     logger.info("tsne finished: %s", tsne_results.shape)
     df['tsne_x_raw'], df['tsne_y_raw'] = tsne_results[:, 0], tsne_results[:, 1]
     norm = StandardScaler().fit_transform(df[["tsne_x_raw", "tsne_y_raw"]])
@@ -75,7 +75,7 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
 
 
 def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=None, tsne_jobs=4,
-                                   dim_reduction="tsne"):
+                                   dim_reduction="tsne", model_file=None):
     if pca_components:
         logger.info("shape before pca: %s", data.shape)
         pca = PCA(n_components=pca_components, svd_solver='randomized')
@@ -85,14 +85,23 @@ def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=
         logger.info("shape after pca: %s", data.shape)
 
     if dim_reduction == "umap":
-        model = umap.UMAP(n_components=2, n_neighbors=10, min_dist=0.001)
-        transformed = model.fit_transform(data)
-        with open(DIM_REDUCTION_PATH, "wb") as f:
-            pickle.dump(model, f)
+        if model_file:
+            with open(model_file, "rb") as f:
+                model = pickle.load(f)
+                transformed = model.transform(data)
+        else:
+            model = umap.UMAP(n_components=2, n_neighbors=10, min_dist=0.001)
+            transformed = model.fit_transform(data)
+            with open(DIM_REDUCTION_PATH, "wb") as f:
+                pickle.dump(model, f)
     elif dim_reduction == "parametric_umap":
-        model = ParametricUMAP()
-        transformed = model.fit_transform(data)
-        model.save("model_parametric_umap")
+        if model_file:
+            model = load_ParametricUMAP(model_file)
+            transformed = model.transform(data)
+        else:
+            model = ParametricUMAP()
+            transformed = model.fit_transform(data)
+            model.save("model_parametric_umap")
     else:
         model = TSNE(n_components=2, verbose=True, perplexity=perplexity, n_iter=n_iter, n_jobs=tsne_jobs)
         transformed = model.fit(data)
