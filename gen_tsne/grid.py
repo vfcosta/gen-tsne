@@ -52,7 +52,7 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
         all_possibilities.pop(0)
 
     for model_name, group in df.groupby(by="name"):
-        ordered_images = np.zeros((frow, fcol, *image_shape))
+        ordered_images = np.zeros((frow, fcol, *image_shape), dtype=np.uint8)
         overlap, show = 0, 0
         for i, row in group.iterrows():
             x, y = row["tsne_x_int"], row["tsne_y_int"]
@@ -62,7 +62,7 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
                 x, y = np.clip(x + dx, 0, fcol - 1), np.clip(y + dy, 0, frow - 1)
             if np.sum(ordered_images[x, y]) == 0:
                 show += 1
-                ordered_images[x, y] = row[get_image_cols(image_shape)].values.reshape((-1, *image_shape))
+                ordered_images[x, y] = get_image(row, image_shape)
             else:
                 overlap += 1
         logger.info("overlap for %s: %d, show: %d", model_name, overlap, show)
@@ -147,7 +147,7 @@ def load_data(paths, use_features, resize=None):
             image = Image.open(f)
             if resize:
                 image = image.resize(resize)
-            image_array = np.array(image)/255
+            image_array = np.array(image)
             image_shape = image_array.shape
             df_new = pd.DataFrame(image_array.reshape((-1, np.prod(image_shape))))
             df_new["name"] = name
@@ -155,7 +155,7 @@ def load_data(paths, use_features, resize=None):
             df = df.append(df_new)
         logger.info("loaded %d images for path %s", len(df), path)
     logger.info("loaded %d images with shape %s", len(df), image_shape)
-    tsne_input = np.array(all_features) if use_features else get_image_data(df, image_shape)
+    tsne_input = np.array(all_features) if use_features else get_image_data(df, image_shape) / 255
     return df.reset_index(), image_shape, tsne_input
 
 
@@ -163,6 +163,10 @@ def generate_scatter(df, output_dir):
     plt.figure(figsize=(10, 10))
     sns.scatterplot(x="tsne_x", y="tsne_y", hue="name", data=df, legend="full", alpha=0.2)
     plt.savefig(os.path.join(output_dir, f"models_scatter.png"))
+
+
+def get_image(row, image_shape):
+    return get_image_data(row, image_shape).reshape((-1, *image_shape))
 
 
 def get_image_cols(image_shape):
