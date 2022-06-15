@@ -17,7 +17,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--dim-reduction', default="tsne",
                         help='Algorithm for dimensionality reduction (tsne|umap|parametric_umap)')
     parser.add_argument('-m', '--model-file', help='Trained model file')
+    parser.add_argument('-j', "--jitter-win", type=int, help='jitter to reposition overlapping images', default=0)
     args = parser.parse_args()
     calculate([args.baseline] + args.paths, args.output, frow=args.rows, fcol=args.cols, perplexity=args.perplexity,
               n_iter=args.iter, use_features=args.use_features, resize=args.size, dim_reduction=args.dim_reduction,
-              model_file=args.model_file)
+              model_file=args.model_file, jitter_win=args.jitter_win)
