@@ -51,18 +51,20 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
         all_possibilities.sort(key=lambda x: (max(abs(x[0]), abs(x[1])), abs(x[0]) + abs(x[1])))
         all_possibilities.pop(0)
 
-    for model_name, group in df.groupby(by="name"):
+    for model_name, group in tqdm(df.groupby(by="name"), desc="generate image map for model"):
         ordered_images = np.zeros((frow, fcol, *image_shape), dtype=np.uint8)
+        placed_images = np.zeros((frow, fcol), dtype=np.uint8)
         overlap, show = 0, 0
-        for i, row in group.iterrows():
+        for i, row in tqdm(group.iterrows()):
             x, y = row["tsne_x_int"], row["tsne_y_int"]
             possibilities = list(all_possibilities)
-            while len(possibilities) and np.sum(ordered_images[x, y]) != 0:
+            while len(possibilities) and placed_images[x, y] != 0:
                 dx, dy = possibilities.pop(0)
                 x, y = np.clip(x + dx, 0, fcol - 1), np.clip(y + dy, 0, frow - 1)
-            if np.sum(ordered_images[x, y]) == 0:
+            if placed_images[x, y] == 0:
                 show += 1
                 ordered_images[x, y] = get_image(row, image_shape)
+                placed_images[x, y] = 1
             else:
                 overlap += 1
         logger.info("overlap for %s: %d, show: %d", model_name, overlap, show)
