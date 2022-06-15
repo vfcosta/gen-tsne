@@ -24,8 +24,9 @@ def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca
           dim_reduction="tsne", model_file=None):
     os.makedirs(output_dir, exist_ok=True)
     df, image_shape, tsne_input = load_data(paths, use_features, resize)
-    tsne_results = apply_dimensionality_reduction(df, tsne_input, perplexity, n_iter, pca_components=pca_components,
-                                                  dim_reduction=dim_reduction, model_file=model_file)
+    df = apply_pca(df, tsne_input, pca_components)
+    tsne_results = apply_dimensionality_reduction(tsne_input, perplexity, n_iter, dim_reduction=dim_reduction,
+                                                  model_file=model_file)
     logger.info("tsne finished: %s", tsne_results.shape)
     df['tsne_x_raw'], df['tsne_y_raw'] = tsne_results[:, 0], tsne_results[:, 1]
     norm = StandardScaler().fit_transform(df[["tsne_x_raw", "tsne_y_raw"]])
@@ -61,7 +62,7 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
                 x, y = np.clip(x + dx, 0, fcol - 1), np.clip(y + dy, 0, frow - 1)
             if np.sum(ordered_images[x, y]) == 0:
                 show += 1
-                ordered_images[x, y] = row[get_features(image_shape)].values.reshape((-1, *image_shape))
+                ordered_images[x, y] = row[get_image_cols(image_shape)].values.reshape((-1, *image_shape))
             else:
                 overlap += 1
         logger.info("overlap for %s: %d, show: %d", model_name, overlap, show)
@@ -75,16 +76,19 @@ def generate_images(fcol, frow, image_shape, df, output_dir=None, jitter_win=Non
     return df
 
 
-def apply_dimensionality_reduction(df, data, perplexity, n_iter, pca_components=None, tsne_jobs=4,
-                                   dim_reduction="tsne", model_file=None):
-    if pca_components:
-        logger.info("shape before pca: %s", data.shape)
-        pca = PCA(n_components=pca_components, svd_solver='randomized')
-        data = pca.fit_transform(data)
-        pca_cols = [f"pca_{c}" for c in range(pca.n_components)]
-        df[pca_cols] = pd.DataFrame(data, index=df.index)
-        logger.info("shape after pca: %s", data.shape)
+def apply_pca(df, data, pca_components=None):
+    if not pca_components:
+        return df
+    logger.info("shape before pca: %s", data.shape)
+    pca = PCA(n_components=pca_components, svd_solver='randomized')
+    data = pca.fit_transform(data)
+    pca_cols = [f"pca_{c}" for c in range(pca.n_components)]
+    df[pca_cols] = pd.DataFrame(data, index=df.index)
+    logger.info("shape after pca: %s", data.shape)
+    return df  # FIXME modify the input of the dimensionality reduction method
 
+
+def apply_dimensionality_reduction(data, perplexity, n_iter, tsne_jobs=4, dim_reduction="tsne", model_file=None):
     if dim_reduction == "umap":
         if model_file:
             with open(model_file, "rb") as f:
@@ -161,9 +165,9 @@ def generate_scatter(df, output_dir):
     plt.savefig(os.path.join(output_dir, f"models_scatter.png"))
 
 
-def get_features(image_shape):
+def get_image_cols(image_shape):
     return list(range(np.prod(image_shape)))
 
 
 def get_image_data(df, image_shape):
-    return df[get_features(image_shape)].values
+    return df[get_image_cols(image_shape)].values
