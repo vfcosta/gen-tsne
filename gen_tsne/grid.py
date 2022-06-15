@@ -1,4 +1,3 @@
-from umap.parametric_umap import ParametricUMAP, load_ParametricUMAP
 import logging
 import os
 import pickle
@@ -13,6 +12,8 @@ from PIL import Image
 from openTSNE import TSNE
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
+from umap.parametric_umap import ParametricUMAP, load_ParametricUMAP
 
 logger = logging.getLogger(__name__)
 DIM_REDUCTION_PATH = "dim_reduction.pkl"
@@ -126,13 +127,13 @@ def load_data(paths, use_features, resize=None):
     df = pd.DataFrame()
     image_shape = None
     all_features = []
-    for i, path in enumerate(paths):
+    for i, path in tqdm(enumerate(paths), desc="processing paths"):
         if not path.endswith(".png"):
             path = os.path.join(path, "*.png")
         files = glob(path)
         name = os.path.basename(os.path.commonpath(files))
         logger.info("loading images from %s for model %s", path, name)
-        for f in files:
+        for f in tqdm(files, desc=f"loading images for model {name}"):
             if use_features:
                 features = load_features(f)
                 if features is None:
