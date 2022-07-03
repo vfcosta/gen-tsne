@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+from functools import lru_cache
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -21,9 +22,9 @@ DIM_REDUCTION_PATH = "dim_reduction.pkl"
 
 def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca_components=50,
           output_dir="./output", save_data=True, save_scatter=True, use_features=False, resize=None,
-          dim_reduction="tsne", model_file=None):
+          dim_reduction="tsne", model_file=None, save_grid_images=True):
     os.makedirs(output_dir, exist_ok=True)
-    df, image_shape, tsne_input = load_data(paths, use_features, resize)
+    df, image_shape, tsne_input = load_data(tuple(paths), use_features, tuple(resize) if resize else resize)
     df = apply_pca(df, tsne_input, pca_components)
     tsne_results = apply_dimensionality_reduction(tsne_input, perplexity, n_iter, dim_reduction=dim_reduction,
                                                   model_file=model_file)
@@ -33,7 +34,8 @@ def build(paths, frow=60, fcol=60, perplexity=30, n_iter=1000, jitter_win=0, pca
     df['tsne_x'], df['tsne_y'] = norm[:, 0], norm[:, 1]
     if save_scatter:
         generate_scatter(df, output_dir)
-    df = generate_images(fcol, frow, image_shape, df, output_dir=output_dir, jitter_win=jitter_win)
+    if save_grid_images:
+        df = generate_images(fcol, frow, image_shape, df, output_dir=output_dir, jitter_win=jitter_win)
     if save_data:
         logger.info("saving data.csv")
         df.to_csv(os.path.join(output_dir, "data.csv"), index=False)
@@ -129,6 +131,7 @@ def load_features(image_path, extensions=("npz", "npy")):
     return None
 
 
+@lru_cache
 def load_data(paths, use_features, resize=None):
     df = pd.DataFrame()
     image_shape = None

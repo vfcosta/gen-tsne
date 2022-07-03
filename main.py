@@ -18,7 +18,10 @@ if __name__ == "__main__":
                         help='Algorithm for dimensionality reduction (tsne|umap|parametric_umap)')
     parser.add_argument('-m', '--model-file', help='Trained model file')
     parser.add_argument('-j', "--jitter-win", type=int, help='jitter to reposition overlapping images', default=0)
+    parser.add_argument('-t', "--calc-rmse", default=False, action='store_true', help='Calculate rmse')
+    parser.add_argument('-e', "--executions", default=1, type=int, help='Number of runs for calculating the metric')
     args = parser.parse_args()
     calculate([args.baseline] + args.paths, args.output, frow=args.rows, fcol=args.cols, perplexity=args.perplexity,
               n_iter=args.iter, use_features=args.use_features, resize=args.size, dim_reduction=args.dim_reduction,
-              model_file=args.model_file, jitter_win=args.jitter_win)
+              model_file=args.model_file, jitter_win=args.jitter_win, enable_rmse=args.calc_rmse,
+              executions=args.executions)
