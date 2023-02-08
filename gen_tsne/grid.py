@@ -149,7 +149,7 @@ def load_data(paths, use_features, resize=None):
                     logger.warning("features not found for %s", f)
                     continue
                 all_features.append(features)
-            image = Image.open(f)
+            image = Image.open(f).convert("RGB")
             if resize:
                 image = image.resize(resize)
             image_array = np.array(image)
