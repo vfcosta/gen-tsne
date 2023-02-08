@@ -12,7 +12,7 @@ See below an overview of the evaluation method:
 
 We applied this method in [COEGAN](https://github.com/vfcosta/coegan) to provide further evidence of the evolutionary contribution of the model to the creation of strong generators and discriminators.
 
-See belo some results:
+See below some results:
 ![](images/results.png)
 
 A metric based on the Jaccard index between t-SNE maps was designed to quantitatively represent the aspects of the model.
