@@ -157,7 +157,7 @@ def load_data(paths, use_features, resize=None):
             df_new = pd.DataFrame(image_array.reshape((-1, np.prod(image_shape))))
             df_new["name"] = name
             df_new["file"] = f
-            df = df.append(df_new)
+            df = pd.concat((df, df_new), ignore_index=True, sort=False)
         logger.info("loaded %d images for path %s", len(df), path)
     logger.info("loaded %d images with shape %s", len(df), image_shape)
     tsne_input = np.array(all_features) if use_features else get_image_data(df, image_shape) / 255
