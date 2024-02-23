@@ -4,7 +4,7 @@ from gen_tsne.gen_tsne import calculate
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Apply Gen t-SNE metric.')
-    parser.add_argument('-b', '--baseline', help='Path to images from the dataset (baseline)', required=True)
+    parser.add_argument('-b', '--baseline', help='Path to images from the dataset (baseline)', required=False)
     parser.add_argument('-p', '--paths', action='append', help='Paths to images from generative models', required=True)
     parser.add_argument('-o', '--output', help='Output dir', default="./output")
     parser.add_argument('-r', "--rows", type=int, help='rows', default=60)
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', "--calc-rmse", default=False, action='store_true', help='Calculate rmse')
     parser.add_argument('-e', "--executions", default=1, type=int, help='Number of runs for calculating the metric')
     args = parser.parse_args()
-    calculate([args.baseline] + args.paths, args.output, frow=args.rows, fcol=args.cols, perplexity=args.perplexity,
-              n_iter=args.iter, use_features=args.use_features, resize=args.size, dim_reduction=args.dim_reduction,
-              model_file=args.model_file, jitter_win=args.jitter_win, enable_rmse=args.calc_rmse,
-              executions=args.executions)
+    calculate(([args.baseline] if args.baseline else []) + args.paths, args.output, frow=args.rows, fcol=args.cols,
+              perplexity=args.perplexity, n_iter=args.iter, use_features=args.use_features, resize=args.size,
+              dim_reduction=args.dim_reduction, model_file=args.model_file, jitter_win=args.jitter_win,
+              enable_rmse=args.calc_rmse, executions=args.executions)
