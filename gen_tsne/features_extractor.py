@@ -3,18 +3,21 @@ import logging
 import os
 from glob import glob
 
+import clip
 import numpy as np
+import torch
+import torchvision
 from piq.feature_extractors import InceptionV3
 from torchvision.io import read_image
 from tqdm import tqdm
-import clip
-import torch
 
 logger = logging.getLogger(__name__)
 
 inception_model = None
 clip_model = None
 device = "cuda" if torch.cuda.is_available() else "cpu"
+clip_normalize = torchvision.transforms.Normalize((0.48145466, 0.4578275, 0.40821073),
+                                                  (0.26862954, 0.26130258, 0.27577711))
 
 
 def build_inception_model():
@@ -40,8 +43,8 @@ def extract_clip(image):
     global clip_model
     if clip_model is None:
         clip_model = build_clip_model()
-    image = torch.nn.functional.interpolate(image, (224, 224), mode='nearest')
-    features = clip_model.encode_image(image)
+    image = torch.nn.functional.interpolate(image, (224, 224), mode='nearest') / 255
+    features = clip_model.encode_image(clip_normalize(image))
     return features.detach().cpu().numpy().squeeze()
 
 
